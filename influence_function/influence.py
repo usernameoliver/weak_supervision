@@ -1,4 +1,5 @@
 '''
+Implementation of the calculation of influence function
 @Auther: Degan Hao
 @Date: 02/03/2020
 

@@ -1,4 +1,7 @@
 '''
+Demo usage of influence function with an inception V3 model. 
+The influence of each imaging data is output into a json file. 
+
 @Auther: Degan Hao
 @Date: 02/03/2020
 

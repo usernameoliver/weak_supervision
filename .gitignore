@@ -1,3 +1,5 @@
 *pyc
 *pkl
+*npy
+sbatch*
 __pycache__

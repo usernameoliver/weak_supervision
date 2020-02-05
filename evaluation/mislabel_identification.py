@@ -1,3 +1,9 @@
+'''
+Calculating the percentage of mislabels identified.
+
+@Author: Degan Hao
+@Date: Feb 05, 2020
+'''
 import numpy as np
 import json
 from sklearn import metrics
