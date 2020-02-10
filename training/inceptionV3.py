@@ -21,6 +21,7 @@ import torch.nn.functional as F
 import pickle
 import sys
 
+#BASE_DIR = '/pylon5/ca5phjp/deh95/mi/'#Change the BASE_DIR to your working directory
 BASE_DIR = './'#Change the BASE_DIR to your working directory
 
 def set_parameter_requires_grad(model, nth_frozen):
@@ -31,7 +32,6 @@ def set_parameter_requires_grad(model, nth_frozen):
         count += 1
         param.requires_grad = False
 
-scale = 1#scaling factor balancing the classification loss and mislabeling loss
 '''
 load data
 '''
@@ -77,13 +77,13 @@ verbose = False
 
 nth_layer = -1
 flip_ratio = float(sys.argv[1]) 
-f_train = open('./training/label_dict/' + str(int(100 * flip_ratio)) + 'percent_flipped_label_train.pkl', "rb")
-f_val = open('./training/label_dict/' + str(int(100 * flip_ratio)) + 'percent_flipped_label_val.pkl', "rb")
+f_train = open(BASE_DIR + '/training/label_dict/' + str(int(100 * flip_ratio)) + 'percent_flipped_label_train.pkl', "rb")
+f_val = open(BASE_DIR + '/training/label_dict/' + str(int(100 * flip_ratio)) + 'percent_flipped_label_val.pkl', "rb")
 flipped_label_dict_train = pickle.load(f_train)
 flipped_label_dict_val = pickle.load(f_val)
 flipped_label_dict = {**flipped_label_dict_train, **flipped_label_dict_val}
 
-def train_model(model, criterion, optimizer, scheduler, use_influence, num_epochs = n_epochs):
+def train_model(model, criterion, optimizer, scheduler, num_epochs = n_epochs):
     since = time.time()
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
@@ -113,20 +113,13 @@ def train_model(model, criterion, optimizer, scheduler, use_influence, num_epoch
                 image_name = path[0].split('/')[-1]
                 labels = flipped_label_dict[image_name]
                 labels = torch.tensor([labels]).to(device)
-                if use_influence:
-                    mislabels = labels
-                    if count % 5 == 0:
-                        mislabels = 1 - labels
-                        #print('labeled flipped to ' + str(mislabels))
-                    count += 1
-
                 optimizer.zero_grad()
                 
                 #forward, track history only in train
                 set_grad = False
-                if use_influence or phase == 'train':
+                if phase == 'train':
                     set_grad = True
-                with torch.set_grad_enabled(set_grad):#In order to allow calculating influence, we set True. Comparing to the line above, always setting grad enabled wastes some memory.
+                with torch.set_grad_enabled(set_grad):
                     outputs = model(inputs)
                     
                     outputs_softmax = F.softmax(outputs, dim = 1)
@@ -134,57 +127,25 @@ def train_model(model, criterion, optimizer, scheduler, use_influence, num_epoch
                     for probs in outputs_array:
                         pred.append(probs[0])
                     _, preds = torch.max(outputs_softmax, 1)
-                    classification_loss = criterion(outputs_softmax, labels)
-
-                    #add mislabeling loss to the loss
-                    if use_influence:
-                        params = list(model.parameters())
-                        influence_scores = influence.layer_wise_influence(params, loss, nth_layer, verbose) 
-                        #print('influence_scores = ' + str(influence_scores)) 
-                        influences = torch.ones((1,2)).cuda()
-                        influences[0][0] = influence_scores
-                        influences[0][1] = 1 - influence_scores
-                        prob = influence_scores.detach().cpu().clone().numpy()
-                        pred_mislabels.append(prob)
-                        _, preds_mislabels = torch.max(influences, 1)
-                        mislabel_loss = criterion(influences, mislabels)
-                        loss = classification_loss + scale * mislabel_loss
-                    else:
-                        loss = classification_loss
+                    loss = criterion(outputs_softmax, labels)
 
                     if phase == 'train':
                         loss.backward()
                         optimizer.step()
                 running_loss += loss.item() * inputs.size(0)
-
                 running_corrects += torch.sum(preds == labels.data)
                 several_labels = labels.data.cpu().numpy()
                 for label in several_labels:
                     y_label.append(label)
-                if use_influence:
-                    running_corrects_mislabels += torch.sum(preds_mislabels == mislabels.data)
-                    several_labels_mislabels = mislabels.data.cpu().numpy()
-                    for label in several_labels_mislabels:
-                        y_label_mislabels.append(label)
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects.double() / dataset_sizes[phase]
             fpr, tpr, thresholds = metrics.roc_curve(y_label, pred, pos_label = 1)
             epoch_auc = 1 - metrics.auc(fpr, tpr)
             print('{} Loss: {:.4f} Acc: {:.4f} AUC: {:.4f}'.format(phase, epoch_loss, epoch_acc, epoch_auc))
-            if use_influence:
-                epoch_acc_mislabels = running_corrects_mislabels.double() / dataset_sizes[phase]
-                fpr_mislabels, tpr_mislabels, thresholds_mislabels = metrics.roc_curve(y_label_mislabels, pred_mislabels, pos_label = 1)
-                epoch_auc_mislabels = 1 - metrics.auc(fpr_mislabels, tpr_mislabels)
-                print('{} Mislabel Loss: {:.4f} Mislabel Acc: {:.4f} Mislabel AUC: {:.4f}'.format(phase, epoch_loss, epoch_acc_mislabels, epoch_auc_mislabels))
-                if phase == 'val' and epoch_acc_mislabels > best_acc and epoch_auc_mislabels > best_auc:
-                    best_acc = epoch_acc_mislabels
-                    best_auc = epoch_auc_mislabels
-                    best_model_wts = copy.deepcopy(model.state_dict())
-            else:
-                if phase == 'val' and epoch_acc > best_acc and epoch_auc > best_auc:
-                    best_acc = epoch_acc
-                    best_auc = epoch_auc
-                    best_model_wts = copy.deepcopy(model.state_dict())
+            if phase == 'val' and epoch_acc > best_acc:
+                best_acc = epoch_acc
+                best_auc = epoch_auc
+                best_model_wts = copy.deepcopy(model.state_dict())
         print()
 
     time_elapsed = time.time() - since
@@ -220,7 +181,6 @@ criterion = nn.CrossEntropyLoss()
 optimizer_fit = optim.SGD(model.parameters(), lr = 0.001, momentum = 0.9)
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer_fit, step_size = 7, gamma = 0.1)
 
-use_influence = False 
-model, loss = train_model(model, criterion, optimizer_fit, exp_lr_scheduler, use_influence, num_epochs = n_epochs)
+model, loss = train_model(model, criterion, optimizer_fit, exp_lr_scheduler, num_epochs = n_epochs)
 print('flip ratio = ' + str(flip_ratio))
 print('done')

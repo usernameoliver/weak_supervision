@@ -23,6 +23,7 @@ import time
 import sys
 
 
+#BASE_DIR = '/pylon5/ca5phjp/deh95/mi/'#Change the BASE_DIR to your working directory
 BASE_DIR = './'#Change the BASE_DIR to your working directory
 def load_inceptionV3(flip_percentage):
     print('load the model...')
@@ -90,7 +91,7 @@ def calc_inf_inceptionV3(flip_percentage):
         inputs = preprocess_inceptionV3(img_path)
 
         img_path_test = BASE_DIR + 'training/data_breast_density/train/B/2_Case1000_breast_segmentation.jpg'
-        img_name_test = BASE_DIR + 'A_test_image.jpg'
+        img_name_test = '2_Case1000_breast_segmentation.jpg'  
         inputs_test = preprocess_inceptionV3(img_path)
         original_label_test = label_original_dict[img_name_test]
         loss_test, params_test = feed_data_to_model(inceptionV3_model, inputs_test, original_label_test)

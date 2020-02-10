@@ -8,9 +8,7 @@ conda create --name myenv
 pip install -r requirements.txt
 ```
 
-Next, put the dataset into the data/ folder.
-
-Note: Please change BASE\_DIR in each py file to your working directory.
+Next, put the dataset into the data/ folder under weak\_supervision directory. Please change BASE\_DIR in each py file to your working directory.
 
 ## Uage
 When the ground truth labels exists, we manually create mislabels by flipping labels in a small portion of the training data. Here the percentage of mislabels is 20%, i.e. 0.2 in the commands below. Note that 0.2 can be changed to any number between 0.0 and 1.0. 
