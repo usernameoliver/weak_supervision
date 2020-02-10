@@ -1,5 +1,8 @@
 *pyc
 *pkl
 *npy
+*job
+*out
+*pt
 sbatch*
 __pycache__
