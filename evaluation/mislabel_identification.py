@@ -56,8 +56,6 @@ if __name__ == "__main__":
     x_percent = 0.02
     num_at_x_percent = int(len(data) * x_percent)
     data_mislabeled = data_sorted[-num_at_x_percent:-1] 
-    #zero_as_zero, zero_as_one, one_as_one, one_as_zero = identify_by_nth(infs_path, nth)
-    #plot_roc(zero_as_zero, zero_as_one, one_as_one, one_as_zero, flip_percentage)
     num_identified = count_original_flip_difference(data_mislabeled)
     print('The percentage of identified mislabeled data = ' + str(num_identified * 100.0 / len(data_mislabeled)) + '%')
     print('done')

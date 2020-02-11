@@ -23,7 +23,7 @@ import time
 import sys
 
 
-#BASE_DIR = '/pylon5/ca5phjp/deh95/mi/'#Change the BASE_DIR to your working directory
+#BASE_DIR = '/pylon5/ca5phjp/deh95/mi/'
 BASE_DIR = './'#Change the BASE_DIR to your working directory
 def load_inceptionV3(flip_percentage):
     print('load the model...')
@@ -78,6 +78,7 @@ def calc_inf_inceptionV3(flip_percentage):
         count += 1
         original_label = label_original_dict[img_name]
         flipped_label = label_flipped_dict[img_name]
+        #We check folders of two classes because these two folders do noe contain file of same names.
         img_path_B = BASE_DIR + 'training/data_breast_density/train/B/' + img_name
         img_path_C = BASE_DIR + 'training/data_breast_density/train/C/' + img_name
         if os.path.exists(img_path_B):
@@ -85,7 +86,7 @@ def calc_inf_inceptionV3(flip_percentage):
         elif os.path.exists(img_path_C):
             img_path = img_path_C
         else:
-            print('image does not exist, will skip ' + img_path_B)
+            print('image does not exist, will skip ' + img_name)
             continue
 
         inputs = preprocess_inceptionV3(img_path)

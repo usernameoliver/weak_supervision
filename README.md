@@ -1,5 +1,5 @@
 # Weakly supervised learning on medical images with inaccurate labels 
-This repository is a PyTorch implementation of influence function plugged into InceptionV3 models. The influence function plug-in can be applied to other deep convolutional neural networks(DCNN) for mislabeled imaging data identification.
+This repository is a PyTorch implementation of influence function applied to InceptionV3 models. The influence function plug-in can also be applied to other deep convolutional neural networks(DCNN) for mislabeled imaging data identification.
 
 ## Setup
 First, install required Python packages with the require.txt in Anaconda Environment.
